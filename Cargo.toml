@@ -1,0 +1,6 @@
+[package]
+name = "lighting_utxo_anchor_manager"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
