@@ -1,114 +1,81 @@
 # ⚡ Lightning UTXO & Anchor Manager (Rust)
 
-A Rust-based CLI tool and library for analyzing and managing UTXOs for Lightning nodes using anchor channels.
+A Rust-based CLI tool and library for analyzing and managing UTXOs for Lightning nodes using anchor channels. Built as part of my transition into Lightning infrastructure engineering during the BOSS Bitcoin Developer Challenge.
 
-Built as part of my transition into Lightning infrastructure engineering during the BOSS Bitcoin Developer Challenge.
+Rust • Bitcoin • LDK • CLI
 
----
-
-## 📌 Overview
-
-Lightning nodes rely on on-chain Bitcoin transactions to:
-
-- Open channels
-- Close channels
-- Handle force closes
-- Perform anchor fee bumping (CPFP)
-
-However, poor UTXO management can lead to:
-
-- Failed channel opens
-- Inability to bump fees
-- Stuck force-close transactions
-- Unsafe reserve conditions
-
-This project provides a structured way to:
-
-- Analyze Lightning wallet UTXOs
-- Model anchor channel reserve requirements
-- Simulate mempool fee spikes
-- Evaluate fee bump safety
-- Estimate safe channel capacity
-
----
-
-## 🎯 Project Goals
-
-- Build a reusable Rust library for Lightning-aware UTXO management
-- Create a CLI tool for Lightning node operators
-- Model anchor channel reserve and CPFP safety
-- Simulate fee bump scenarios under congestion
-- Bridge wallet-level logic with Lightning infrastructure needs
-
----
-
-## 🧠 Why This Matters
+## Why This Matters
 
 Lightning nodes do not manage on-chain funds automatically — wallet logic must ensure:
-
 - Adequate anchor reserves
 - Emergency liquidity
 - Fee bump capacity under congestion
 - Safe UTXO selection for channel funding
 
-This tool acts as a **UTXO health intelligence layer** for Lightning nodes.
+This tool acts as a **UTXO health intelligence layer** for Lightning nodes, preventing failed channel opens, stuck force-close transactions, and unsafe reserve conditions.
 
----
+## Features
 
-## 🛠 Tech Stack
+- **UTXO classification** — spendable, anchor-capable, reserved
+- **Channel reserve modeling**
+- **CPFP carve-out safety simulation**
+- **Anchor fee bump capacity estimation**
+- **CLI-based reporting**
+- **Modular Rust library design**
 
-| Component | Technology |
-|-----------|------------|
-| Language | Rust |
-| Bitcoin primitives | `rust-bitcoin` |
-| CLI framework | `clap` |
-| Error handling | `thiserror` |
-| Serialization | `serde` |
-| Testing | `cargo test` |
+## Quick Start
 
----
+```bash
+# 1. Install Rust
+curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
 
-## 📁 Project Structure
+# 2. Clone the repository
+git clone https://github.com/Ugarba202/Lightning-UTXO-Anchor-Manager.git
+cd ln-utxo-manager
+
+# 3. Build the project
+cargo build --release
+```
+
+## Project Structure
+
+```text
 ln-utxo-manager/
 ├── Cargo.toml
 ├── README.md
 ├── src/
-│ ├── lib.rs
-│ ├── utxo.rs
-│ ├── reserve.rs
-│ ├── anchor.rs
-│ ├── selection.rs
-│ ├── simulation.rs
-│ ├── error.rs
-│ └── bin/
-│ └── main.rs
+│   ├── lib.rs
+│   ├── utxo.rs
+│   ├── reserve.rs
+│   ├── anchor.rs
+│   ├── selection.rs
+│   ├── simulation.rs
+│   ├── error.rs
+│   └── bin/
+│       └── main.rs
 ├── docs/
-│ ├── anchor_channel_notes.md
-│ └── design.md
+│   ├── anchor_channel_notes.md
+│   └── design.md
 └── tests/
-└── utxo_tests.rs
+    └── utxo_tests.rs
+```
 
----
+## Commands & Usage
 
----
+| Command | Description |
+|---|---|
+| `cargo run -- analyze` | Analyze UTXO health |
+| `cargo run -- simulate --feerate 150` | Simulate mempool congestion |
 
-## 🚀 Installation
-
-### 1️⃣ Install Rust
+## Example
 
 ```bash
-curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
-2️⃣ Clone the repository
-git clone https://github.com/Ugarba202/Lightning-UTXO-Anchor-Manager
-cd ln-utxo-manager
-3️⃣ Build
-cargo build --release
-📦 Usage
-Analyze UTXO health
+# Analyze UTXO health
 cargo run -- analyze
-Simulate mempool congestion
-cargo run -- simulate --feerate 150
-🖥 Example Output
+```
+
+**Example Output:**
+```text
 Lightning Node UTXO Health Report
 ----------------------------------
 Total UTXOs: 14
@@ -120,65 +87,74 @@ Emergency Reserve: OK
 Channel Capacity Estimate:
 - Max Safe Channel Size: 0.08 BTC
 - Safe Under 150 sat/vB: YES
-⚡ Core Features
+```
 
-✔ UTXO classification (spendable, anchor-capable, reserved)
-✔ Channel reserve modeling
-✔ CPFP carve-out safety simulation
-✔ Anchor fee bump capacity estimation
-✔ CLI-based reporting
-✔ Modular Rust library design
+## Documentation
 
-📚 Learning & Research Foundation
+| Document | Description |
+|----------|-------------|
+| `docs/anchor_channel_notes.md` | Notes on anchor channels |
+| `docs/design.md` | System design and architecture |
+
+## Testing
+
+Run the test suite to verify functionality:
+
+```bash
+# Run all tests
+cargo test
+```
+
+## Roadmap
+
+- [ ] Integrate Bitcoin RPC input
+- [ ] LDK-compatible wallet interface
+- [ ] JSON export mode
+- [ ] Configurable reserve policies
+- [ ] Regtest-based simulation
+- [ ] Anchor channel stress testing suite
+
+## Acknowledgments & Learning Foundation
 
 This project is built upon:
+- Mastering Bitcoin (Andreas M. Antonopoulos)
+- BOLT 2 – Peer Protocol
+- BOLT 3 – Commitment & Anchor Transactions
+- BOLT 5 – On-chain Handling
+- CPFP Carve-Out Rule (Bitcoin mempool policy)
+- LDK wallet integration architecture
 
-Mastering Bitcoin (Andreas M. Antonopoulos)
+## License
 
-BOLT 2 – Peer Protocol
+MIT License
 
-BOLT 3 – Commitment & Anchor Transactions
+Copyright (c) 2026 Usman Umar Garba
 
-BOLT 5 – On-chain Handling
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-CPFP Carve-Out Rule (Bitcoin mempool policy)
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-LDK wallet integration architecture
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-📈 Roadmap
+---
 
- Integrate Bitcoin RPC input
+## Author
 
- LDK-compatible wallet interface
+Built by **Usman Umar Garba**
+- LinkedIn: [usman-umar-garba](https://www.linkedin.com/in/usman-umar-garba/)
+- X: [@dev_useee](https://x.com/dev_useee)
+- GitHub: [Ugarba202](https://github.com/Ugarba202)
 
- JSON export mode
-
- Configurable reserve policies
-
- Regtest-based simulation
-
- Anchor channel stress testing suite
-
-🧪 Testing
-cargo test
-🤝 Contributing
-
-Contributions are welcome:
-
-Improved fee modeling
-
-Better anchor simulation
-
-LDK integration improvements
-
-Documentation updates
-
-Open an issue to discuss ideas.
-
-🧭 Author
-
-Built by Usman Umar Garba
-https://www.linkedin.com/in/usman-umar-garba/
-https://x.com/dev_useee
-https://github.com/Ugarba202
-Bitcoin &  Lightning  Engineer in progress.
+*Bitcoin & Lightning Engineer in progress.*
