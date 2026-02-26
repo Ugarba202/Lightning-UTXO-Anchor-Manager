@@ -2,7 +2,7 @@
 
 A Rust-based CLI tool and library for analyzing and managing UTXOs for Lightning nodes using anchor channels. Built as part of my transition into Lightning infrastructure engineering during the BOSS Bitcoin Developer Challenge.
 
-Rust • Bitcoin • LDK • CLI
+![Rust](https://img.shields.io/badge/Rust-1.70+-orange) ![Bitcoin](https://img.shields.io/badge/Bitcoin_Core-22+-blue) ![LDK](https://img.shields.io/badge/LDK-Lightning-yellow) ![CLI](https://img.shields.io/badge/CLI-Tool-lightgray)
 
 ## Why This Matters
 
