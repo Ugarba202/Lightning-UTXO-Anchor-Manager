@@ -1,11 +1,10 @@
 use clap::Parser;
-
 use lighting_utxo_anchor_manager::reserve::{
     anchor_capable_utxos, available_after_reserve, fee_bump_capacity, fee_risk_status,
     max_safe_channel_size, spendable_utxos, total_balance,
 };
-use lighting_utxo_anchor_manager::utxo::Utxo;
-
+use lighting_utxo_anchor_manager::rpc::fetch_utxos;
+use lighting_utxo_anchor_manager::simulation::simulate_fee_levels;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -21,25 +20,24 @@ struct Args {
     #[arg(long, default_value_t = 5_000)]
     channel_buffer: u64,
 }
-
 fn main() {
     let args = Args::parse();
 
-    let utxos = vec![
-        Utxo {
-            txid: "abc123".to_string(),
-            vout: 0,
-            value: 50_000,
-            confirmations: 6,
-        },
-        Utxo {
-            txid: "def456".to_string(),
-            vout: 1,
-            value: 30_000,
-            confirmations: 1,
-        },
-    ];
-
+    // let utxos = vec![
+    //     Utxo {
+    //         txid: "abc123".to_string(),
+    //         vout: 0,
+    //         value: 50_000,
+    //         confirmations: 6,
+    //     },
+    //     Utxo {
+    //         txid: "def456".to_string(),
+    //         vout: 1,
+    //         value: 30_000,
+    //         confirmations: 1,
+    //     },
+    // ];
+    let utxos = fetch_utxos();
     let balance = total_balance(&utxos);
 
     let spendable = spendable_utxos(&utxos, 3);
@@ -69,4 +67,5 @@ fn main() {
     println!("\nFee bump simulation ({} sat/vB):", args.feerate);
     println!("Remaining after fee bump: {} sats", fee_capacity);
     println!("Risk status: {}", risk);
+    simulate_fee_levels(&utxos);
 }
