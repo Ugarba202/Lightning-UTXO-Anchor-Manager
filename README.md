@@ -48,7 +48,7 @@ graph TD
     D --> G[selection.rs - Coin Selection]
     E & F & G --> H[simulation.rs - Fee Stress Test]
     H --> I[policy.rs - Health Scoring]
-    I --> J[CLI / main.rs]
+    I --> J[main.rs - CLI Reporting]
 ```
 
 ---
