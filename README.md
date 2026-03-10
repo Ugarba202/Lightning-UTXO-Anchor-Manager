@@ -1,230 +1,134 @@
 # ⚡ Lightning UTXO & Anchor Manager (Rust)
 
-A Rust-based CLI tool and library for analyzing and managing UTXOs for Lightning nodes using anchor channels. Built as part of my transition into Lightning infrastructure engineering during the BOSS Bitcoin Developer Challenge.
+A robust Rust library and CLI tool for analyzing and managing Bitcoin UTXOs specifically for Lightning nodes using **anchor channels**. This project acts as a **Wallet Policy Intelligence Layer**, ensuring nodes maintain the necessary on-chain liquidity for safe operation.
 
 ![Rust](https://img.shields.io/badge/Rust-1.70+-orange) ![Bitcoin](https://img.shields.io/badge/Bitcoin_Core-22+-blue) ![LDK](https://img.shields.io/badge/LDK-Lightning-yellow) ![CLI](https://img.shields.io/badge/CLI-Tool-lightgray)
 
-## Why This Matters
+---
 
-Lightning nodes do not manage on-chain funds automatically — wallet logic must ensure:
-- Adequate anchor reserves
-- Emergency liquidity
-- Fee bump capacity under congestion
-- Safe UTXO selection for channel funding
+## 🔍 Why This Matters
 
-This tool acts as a **UTXO health intelligence layer** for Lightning nodes, preventing failed channel opens, stuck force-close transactions, and unsafe reserve conditions.
+Lightning nodes do not manage on-chain funds automatically. Poor UTXO management often leads to:
+- **Failed Channel Opens**: Insufficient confirmed funds or fragmented UTXOs.
+- **Stuck Force-Closes**: Commitment transactions with fees too low to confirm during spikes.
+- **Liquidity Lockup**: Lack of available UTXOs for emergency fee bumping (CPFP).
 
-## Features
-
-- **UTXO classification** — spendable, anchor-capable, reserved
-- **Channel reserve modeling**
-- **CPFP carve-out safety simulation**
-- **Anchor fee bump capacity estimation**
-- **CLI-based reporting**
-- **Modular Rust library design**
-
-## Lightning Wallet Interface
-
-The project includes a wallet abstraction layer designed to mirror the wallet interfaces used by Lightning implementations.
-
-The `LightningWallet` module exposes:
-
-* wallet balance
-* UTXO access
-* channel funding coin selection
-* Lightning operational risk scoring
-
-This design allows the library to act as a **wallet policy engine that could theoretically integrate with Lightning node software such as LDK, LND, or Core Lightning**.
-
-## System Architecture
-
-The Lightning UTXO & Anchor Manager is designed as a modular Rust library that analyzes wallet UTXOs and evaluates Lightning node operational safety.
-
-```
-Bitcoin Core RPC
-        │
-        ▼
-     rpc.rs
-(fetch wallet UTXOs)
-        │
-        ▼
-      utxo.rs
-(UTXO data model)
-        │
-        ▼
- ┌───────────────┬───────────────┬───────────────┐
- ▼               ▼               ▼
-reserve.rs     anchor.rs      selection.rs
-(wallet policy) (anchor rules) (coin selection)
-        │
-        ▼
-   simulation.rs
-(fee environment analysis)
-        │
-        ▼
-     policy.rs
-(Lightning wallet diagnostics)
-        │
-        ▼
-wallet_interface.rs
-(Lightning node integration layer)
-        │
-        ▼
-      main.rs
-(CLI reporting tool)
-```
-
-This architecture separates **Bitcoin wallet logic, Lightning channel policy, and operational diagnostics** into independent modules.
-
-## Quick Start
-
-```bash
-# 1. Install Rust
-curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
-
-# 2. Clone the repository
-git clone https://github.com/Ugarba202/Lightning-UTXO-Anchor-Manager.git
-cd ln-utxo-manager
-
-# 3. Build the project
-cargo build --release
-```
-
-## Project Structure
-
-```text
-ln-utxo-manager/
-├── Cargo.toml
-├── README.md
-├── src/
-│   ├── lib.rs
-│   ├── utxo.rs
-│   ├── reserve.rs
-│   ├── anchor.rs
-│   ├── selection.rs
-│   ├── simulation.rs
-│   ├── error.rs
-│   └── bin/
-│       └── main.rs
-├── docs/
-│   ├── anchor_channel_notes.md
-│   └── design.md
-└── tests/
-    └── utxo_tests.rs
-```
-
-## Commands & Usage
-
-| Command | Description |
-|---|---|
-| `cargo run -- analyze` | Analyze UTXO health |
-| `cargo run -- simulate --feerate 150` | Simulate mempool congestion |
-
-## Example
-
-```bash
-# Analyze UTXO health
-cargo run -- analyze
-```
-
-**Example Output:**
-```text
-Lightning Node UTXO Health Report
-----------------------------------
-Total UTXOs: 14
-Spendable: 9
-Anchor Capable: 4
-Reserved for Anchor Safety: OK
-Emergency Reserve: OK
-
-Channel Capacity Estimate:
-- Max Safe Channel Size: 0.08 BTC
-- Safe Under 150 sat/vB: YES
-```
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| `docs/anchor_channel_notes.md` | Notes on anchor channels |
-| `docs/design.md` | System design and architecture |
-
-## Testing
-
-Run the test suite to verify functionality:
-
-```bash
-# Run all tests
-cargo test
-```
-
-## Roadmap
-
-- [ ] Integrate Bitcoin RPC input
-- [ ] LDK-compatible wallet interface
-- [ ] JSON export mode
-- [ ] Configurable reserve policies
-- [ ] Regtest-based simulation
-- [ ] Anchor channel stress testing suite
-
-## Acknowledgments & Learning Foundation
-
-This project is built upon:
-- Mastering Bitcoin (Andreas M. Antonopoulos)
-- BOLT 2 – Peer Protocol
-- BOLT 3 – Commitment & Anchor Transactions
-- BOLT 5 – On-chain Handling
-- CPFP Carve-Out Rule (Bitcoin mempool policy)
-- LDK wallet integration architecture
-
-## License
-
-MIT License
-
-Copyright (c) 2026 Usman Umar Garba
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This tool solves these issues by providing a **pre-flight diagnostic** for your node's wallet.
 
 ---
 
-## Author
+## 🚀 Key Features
 
-Built by **Usman Umar Garba**
-- LinkedIn: [usman-umar-garba](https://www.linkedin.com/in/usman-umar-garba/)
-- X: [@dev_useee](https://x.com/dev_useee)
-- GitHub: [Ugarba202](https://github.com/Ugarba202)
+### 🛡️ Core UTXO Analysis
+- **Advanced Classification**: Categorizes coins as *Spendable*, *Anchor-Capable* (>= 40k sats), or *Reserved*.
+- **Fragmentation Detection**: Identifies when a wallet has too many small UTXOs ("dust") that could spike transaction costs.
+- **Safe Selection**: Greedy algorithm for selecting the best UTXOs for channel funding while preserving anchor reserves.
 
-## Lightning Wallet Health Dashboard
+### 📈 Risk Simulation
+- **Fee Spike Modeling**: Simulates mempool congestion (up to 500 sat/vB) to verify if your anchor UTXOs can still cover CPFP costs.
+- **Safety Scoring**: Provides a 1-100 "Health Score" based on current wallet liquidity vs. estimated operational risks.
 
-The CLI tool produces a visual health report describing the Lightning node's operational safety.
+### 🔌 Integration Layer
+- **Modular Library**: Designed to be integrated into LDK, LND, or Core Lightning node management stacks.
+- **Bitcoin RPC Support**: Direct integration with `bitcoin-cli` for real-time wallet analysis.
 
-Example output:
+---
 
+## 🏗️ System Architecture
+
+The project follows a modular, policy-driven architecture:
+
+```mermaid
+graph TD
+    A[Bitcoin Core RPC] --> B[rpc.rs]
+    B --> C[utxo.rs Data Model]
+    C --> D{Policy Engine}
+    D --> E[reserve.rs - Liquidity]
+    D --> F[anchor.rs - Anchor Rules]
+    D --> G[selection.rs - Coin Selection]
+    E & F & G --> H[simulation.rs - Fee Stress Test]
+    H --> I[policy.rs - Health Scoring]
+    I --> J[CLI / main.rs]
 ```
-Lightning Wallet Health Dashboard
----------------------------------
 
-Liquidity Health        ████████░░ 80%
-Anchor Safety           ███████░░░ 70%
-Fragmentation Risk      ███░░░░░░░ 30%
+---
+
+## 🛠️ Quick Start
+
+### 1. Requirements
+- Rust 1.70+
+- `bitcoin-cli` (configured for Signet or Mainnet)
+
+### 2. Installation
+```bash
+git clone https://github.com/Ugarba202/Lightning-UTXO-Anchor-Manager.git
+cd lighting_utxo_anchor_manager
+cargo build --release
 ```
 
-This visualization helps operators quickly understand the wallet's readiness for Lightning operations.
+### 3. Usage
+```bash
+# Perform a full wallet health analysis
+cargo run -- analyze
 
-*Bitcoin & Lightning Engineer in progress.*
+# Simulate a high-fee environment (e.g., 250 sat/vB)
+cargo run -- simulate --feerate 250
+```
+
+---
+
+## 📋 Example Output
+
+```text
+⚡ Lightning Node UTXO Health Report
+------------------------------------
+Total UTXOs: 14
+Spendable: 9
+Anchor Capable: 4 (Total: 1.2M sats)
+
+Analysis:
+- Max Safe Channel Size: 0.08 BTC
+- Safe Under 150 sat/vB: YES
+- Wallet Distribution: HEALTHY
+
+Risk Status: SAFE
+```
+
+---
+
+## 🗺️ Roadmap & Future Work
+
+We are aiming to align with the latest developments in the Lightning protocol:
+
+### Phase 1: V3 & Ephemeral Anchors (Next)
+- [ ] **TRUC/V3 Support**: Implement simulation for 0-value ephemeral anchors (BOLT V3).
+- [ ] **Package Relay**: Construct mock parent+child packages for more accurate fee estimation.
+
+### Phase 2: Privacy & Automation
+- [ ] **Privacy Scoring**: Avoid UTXO selection patterns that leak node ownership.
+- [ ] **Automated Consolidation**: Suggest specific transactions to merge small UTXOs during low-fee windows.
+
+### Phase 3: Hardware & API
+- [ ] **BDK Integration**: Move from `bitcoin-cli` to a native BDK-based wallet.
+- [ ] **JSON Export**: Support for Prometheus/Grafana monitoring dashboards.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (`git commit -m 'feat: add some amazing feature'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
+
+---
+
+## 📄 License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+Built by **Usman Umar Garba** | *Bitcoin & Lightning Infrastructure Engineer*
