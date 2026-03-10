@@ -1,19 +1,26 @@
 use clap::Parser;
+use serde::Serialize;
+
 use lighting_utxo_anchor_manager::anchor::{anchor_capable_utxos, max_safe_channel_size};
+
 use lighting_utxo_anchor_manager::policy::{
-    ChannelStrategy, anchor_fee_safety_score, classify_wallet_liquidity, lightning_risk_score,
-    suggest_channel_strategy,
+    anchor_fee_safety_score, classify_wallet_liquidity, lightning_risk_score,
+    suggest_channel_strategy, ChannelStrategy,
 };
+
 use lighting_utxo_anchor_manager::rpc::fetch_utxos;
+
 use lighting_utxo_anchor_manager::selection::{
     consolidation_candidates, detect_fragmentation, select_utxos_for_channel,
 };
 
 use lighting_utxo_anchor_manager::simulation::simulate_fee_levels;
+use lighting_utxo_anchor_manager::visual::health_bar;
 
 use lighting_utxo_anchor_manager::reserve::{
     available_after_reserve, fee_bump_capacity, fee_risk_status, spendable_utxos, total_balance,
 };
+
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -28,9 +35,24 @@ struct Args {
 
     #[arg(long, default_value_t = 5_000)]
     channel_buffer: u64,
+
+    #[arg(long)]
+    json: bool,
 }
+
+#[derive(Serialize)]
+struct WalletReport {
+    total_balance: u64,
+    spendable_balance: u64,
+    usable_balance: u64,
+    anchor_balance: u64,
+    max_channel_size: u64,
+    risk_score: u8,
+}
+
 fn main() {
     let args = Args::parse();
+
     let utxos = match fetch_utxos() {
         Ok(u) => u,
         Err(e) => {
@@ -38,6 +60,7 @@ fn main() {
             return;
         }
     };
+
     let balance = total_balance(&utxos);
 
     let spendable = spendable_utxos(&utxos, 3);
@@ -51,8 +74,40 @@ fn main() {
     let max_channel = max_safe_channel_size(&utxos, 3, args.reserve, args.channel_buffer);
 
     let fee_capacity = fee_bump_capacity(&anchor_utxos, args.feerate, args.tx_size);
-
     let risk = fee_risk_status(&anchor_utxos, args.feerate, args.tx_size);
+
+    let risk_score = lightning_risk_score(&utxos, 40_000);
+
+    // JSON output mode
+    let report = WalletReport {
+        total_balance: balance,
+        spendable_balance,
+        usable_balance: usable,
+        anchor_balance,
+        max_channel_size: max_channel,
+        risk_score,
+    };
+
+    if args.json {
+        let json_output = serde_json::to_string_pretty(&report).unwrap();
+        println!("{}", json_output);
+        return;
+    }
+
+    println!("\n⚡ Lightning Node UTXO Health Report");
+    println!("------------------------------------");
+
+    println!("Total balance: {} sats", balance);
+    println!("Spendable balance (>=3 conf): {} sats", spendable_balance);
+    println!("Usable balance (after reserve): {} sats", usable);
+
+    println!("\nAnchor-capable balance: {} sats", anchor_balance);
+    println!("Max safe channel size: {} sats", max_channel);
+
+    println!("\nFee bump simulation ({} sat/vB):", args.feerate);
+    println!("Remaining after fee bump: {} sats", fee_capacity);
+    println!("Risk status: {}", risk);
+
     println!("\nFragmentation Analysis");
     println!("----------------------");
 
@@ -69,6 +124,7 @@ fn main() {
     } else {
         println!("Wallet UTXO distribution looks healthy");
     }
+
     println!("\nChannel Funding Recommendation");
     println!("------------------------------");
 
@@ -83,8 +139,6 @@ fn main() {
             println!("{} sats", u.value);
         }
     }
-    println!("\nLightning Wallet Policy Analysis");
-    println!("--------------------------------");
 
     println!("\nChannel Funding Strategy");
     println!("------------------------");
@@ -110,6 +164,9 @@ fn main() {
         }
     }
 
+    println!("\nLightning Wallet Policy Analysis");
+    println!("--------------------------------");
+
     let liquidity = classify_wallet_liquidity(&utxos, 40_000);
 
     match liquidity {
@@ -129,28 +186,24 @@ fn main() {
             println!("Wallet liquidity: UNSAFE")
         }
     }
+
     println!("\nLightning Node Risk Score");
     println!("-------------------------");
 
-    let risk_score = lightning_risk_score(&utxos, 40_000);
-
     println!("Operational Safety Score: {}/100", risk_score);
-    let score = anchor_fee_safety_score(&utxos, args.feerate, args.tx_size);
 
-    println!("Anchor Fee Safety Score: {}/100", score);
+    let anchor_score = anchor_fee_safety_score(&utxos, args.feerate, args.tx_size);
 
-    println!("\n⚡ Lightning Node UTXO Health Report");
-    println!("------------------------------------");
+    println!("Anchor Fee Safety Score: {}/100", anchor_score);
 
-    println!("Total balance: {} sats", balance);
-    println!("Spendable balance (>=3 conf): {} sats", spendable_balance);
-    println!("Usable balance (after reserve): {} sats", usable);
+    println!("\nLightning Wallet Health Dashboard");
+    println!("--------------------------------");
 
-    println!("\nAnchor-capable balance: {} sats", anchor_balance);
-    println!("Max safe channel size: {} sats", max_channel);
+    let fragmentation_score = if detect_fragmentation(&utxos) { 30 } else { 90 };
 
-    println!("\nFee bump simulation ({} sat/vB):", args.feerate);
-    println!("Remaining after fee bump: {} sats", fee_capacity);
-    println!("Risk status: {}", risk);
+    println!("Liquidity Health        {}", health_bar(risk_score));
+    println!("Anchor Safety           {}", health_bar(anchor_score));
+    println!("Fragmentation Risk      {}", health_bar(fragmentation_score));
+
     simulate_fee_levels(&utxos);
 }

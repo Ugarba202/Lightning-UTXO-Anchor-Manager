@@ -6,3 +6,6 @@ pub mod rpc;
 pub mod selection;
 pub mod simulation;
 pub mod utxo;
+pub mod visual;
+pub mod wallet_interface;
+

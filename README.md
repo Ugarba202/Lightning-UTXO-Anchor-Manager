@@ -23,6 +23,59 @@ This tool acts as a **UTXO health intelligence layer** for Lightning nodes, prev
 - **CLI-based reporting**
 - **Modular Rust library design**
 
+## Lightning Wallet Interface
+
+The project includes a wallet abstraction layer designed to mirror the wallet interfaces used by Lightning implementations.
+
+The `LightningWallet` module exposes:
+
+* wallet balance
+* UTXO access
+* channel funding coin selection
+* Lightning operational risk scoring
+
+This design allows the library to act as a **wallet policy engine that could theoretically integrate with Lightning node software such as LDK, LND, or Core Lightning**.
+
+## System Architecture
+
+The Lightning UTXO & Anchor Manager is designed as a modular Rust library that analyzes wallet UTXOs and evaluates Lightning node operational safety.
+
+```
+Bitcoin Core RPC
+        │
+        ▼
+     rpc.rs
+(fetch wallet UTXOs)
+        │
+        ▼
+      utxo.rs
+(UTXO data model)
+        │
+        ▼
+ ┌───────────────┬───────────────┬───────────────┐
+ ▼               ▼               ▼
+reserve.rs     anchor.rs      selection.rs
+(wallet policy) (anchor rules) (coin selection)
+        │
+        ▼
+   simulation.rs
+(fee environment analysis)
+        │
+        ▼
+     policy.rs
+(Lightning wallet diagnostics)
+        │
+        ▼
+wallet_interface.rs
+(Lightning node integration layer)
+        │
+        ▼
+      main.rs
+(CLI reporting tool)
+```
+
+This architecture separates **Bitcoin wallet logic, Lightning channel policy, and operational diagnostics** into independent modules.
+
 ## Quick Start
 
 ```bash
@@ -156,5 +209,22 @@ Built by **Usman Umar Garba**
 - LinkedIn: [usman-umar-garba](https://www.linkedin.com/in/usman-umar-garba/)
 - X: [@dev_useee](https://x.com/dev_useee)
 - GitHub: [Ugarba202](https://github.com/Ugarba202)
+
+## Lightning Wallet Health Dashboard
+
+The CLI tool produces a visual health report describing the Lightning node's operational safety.
+
+Example output:
+
+```
+Lightning Wallet Health Dashboard
+---------------------------------
+
+Liquidity Health        ████████░░ 80%
+Anchor Safety           ███████░░░ 70%
+Fragmentation Risk      ███░░░░░░░ 30%
+```
+
+This visualization helps operators quickly understand the wallet's readiness for Lightning operations.
 
 *Bitcoin & Lightning Engineer in progress.*
