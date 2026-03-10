@@ -1,10 +1,19 @@
 use clap::Parser;
-use lighting_utxo_anchor_manager::reserve::{
-    anchor_capable_utxos, available_after_reserve, fee_bump_capacity, fee_risk_status,
-    max_safe_channel_size, spendable_utxos, total_balance,
+use lighting_utxo_anchor_manager::anchor::{anchor_capable_utxos, max_safe_channel_size};
+use lighting_utxo_anchor_manager::policy::{
+    ChannelStrategy, anchor_fee_safety_score, classify_wallet_liquidity, lightning_risk_score,
+    suggest_channel_strategy,
 };
 use lighting_utxo_anchor_manager::rpc::fetch_utxos;
+use lighting_utxo_anchor_manager::selection::{
+    consolidation_candidates, detect_fragmentation, select_utxos_for_channel,
+};
+
 use lighting_utxo_anchor_manager::simulation::simulate_fee_levels;
+
+use lighting_utxo_anchor_manager::reserve::{
+    available_after_reserve, fee_bump_capacity, fee_risk_status, spendable_utxos, total_balance,
+};
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -22,22 +31,13 @@ struct Args {
 }
 fn main() {
     let args = Args::parse();
-
-    // let utxos = vec![
-    //     Utxo {
-    //         txid: "abc123".to_string(),
-    //         vout: 0,
-    //         value: 50_000,
-    //         confirmations: 6,
-    //     },
-    //     Utxo {
-    //         txid: "def456".to_string(),
-    //         vout: 1,
-    //         value: 30_000,
-    //         confirmations: 1,
-    //     },
-    // ];
-    let utxos = fetch_utxos();
+    let utxos = match fetch_utxos() {
+        Ok(u) => u,
+        Err(e) => {
+            println!("RPC error: {}", e);
+            return;
+        }
+    };
     let balance = total_balance(&utxos);
 
     let spendable = spendable_utxos(&utxos, 3);
@@ -53,6 +53,91 @@ fn main() {
     let fee_capacity = fee_bump_capacity(&anchor_utxos, args.feerate, args.tx_size);
 
     let risk = fee_risk_status(&anchor_utxos, args.feerate, args.tx_size);
+    println!("\nFragmentation Analysis");
+    println!("----------------------");
+
+    if detect_fragmentation(&utxos) {
+        println!("⚠ Wallet fragmentation detected");
+
+        let candidates = consolidation_candidates(&utxos);
+
+        println!("Small UTXOs recommended for consolidation:");
+
+        for u in candidates {
+            println!("{} sats", u.value);
+        }
+    } else {
+        println!("Wallet UTXO distribution looks healthy");
+    }
+    println!("\nChannel Funding Recommendation");
+    println!("------------------------------");
+
+    let recommended = select_utxos_for_channel(&utxos, max_channel);
+
+    if recommended.is_empty() {
+        println!("No suitable UTXOs available for channel funding.");
+    } else {
+        println!("Suggested UTXOs for channel funding:");
+
+        for u in recommended {
+            println!("{} sats", u.value);
+        }
+    }
+    println!("\nLightning Wallet Policy Analysis");
+    println!("--------------------------------");
+
+    println!("\nChannel Funding Strategy");
+    println!("------------------------");
+
+    let strategy = suggest_channel_strategy(&utxos, args.reserve);
+
+    match strategy {
+        ChannelStrategy::SingleLargeChannel(size) => {
+            println!("Recommended strategy: Single large channel");
+            println!("Suggested channel size: {} sats", size);
+        }
+
+        ChannelStrategy::MultipleChannels(channels) => {
+            println!("Recommended strategy: Multiple smaller channels");
+
+            for (i, size) in channels.iter().enumerate() {
+                println!("Channel {} → {} sats", i + 1, size);
+            }
+        }
+
+        ChannelStrategy::InsufficientLiquidity => {
+            println!("Wallet liquidity insufficient for safe channel funding");
+        }
+    }
+
+    let liquidity = classify_wallet_liquidity(&utxos, 40_000);
+
+    match liquidity {
+        lighting_utxo_anchor_manager::policy::LiquidityStatus::Healthy => {
+            println!("Wallet liquidity: HEALTHY")
+        }
+
+        lighting_utxo_anchor_manager::policy::LiquidityStatus::LowAnchorLiquidity => {
+            println!("Wallet liquidity: LOW ANCHOR LIQUIDITY")
+        }
+
+        lighting_utxo_anchor_manager::policy::LiquidityStatus::Fragmented => {
+            println!("Wallet liquidity: FRAGMENTED")
+        }
+
+        lighting_utxo_anchor_manager::policy::LiquidityStatus::Unsafe => {
+            println!("Wallet liquidity: UNSAFE")
+        }
+    }
+    println!("\nLightning Node Risk Score");
+    println!("-------------------------");
+
+    let risk_score = lightning_risk_score(&utxos, 40_000);
+
+    println!("Operational Safety Score: {}/100", risk_score);
+    let score = anchor_fee_safety_score(&utxos, args.feerate, args.tx_size);
+
+    println!("Anchor Fee Safety Score: {}/100", score);
 
     println!("\n⚡ Lightning Node UTXO Health Report");
     println!("------------------------------------");
